@@ -1,5 +1,3 @@
-require 'generator'
-
 module Sortable
     def self.included(base)
       base.extend(ClassMethods)
@@ -208,18 +206,17 @@ module Sortable
 
       def process_search(params, conditions, search_array)
         if !params[:q].blank?
-          columns_to_search = ''
-          values = Array.new        
-          g = Generator.new(search_array)
-          g.each do |col|
-           columns_to_search += col + ' LIKE ? '
-           columns_to_search += 'OR ' unless g.end?
-           values<< "%#{params[:q]}%"
+          columns_to_search = []
+          
+          search_array.each do |col|
+            columns_to_search << "#{col} LIKE ?"
           end
-          conditions += ' and' if !conditions.blank?
-          conditions = [conditions + ' (' + columns_to_search + ')'] + values
+          
+          conditions += ' AND' unless conditions.blank?
+          conditions = ["#{conditions} (#{columns_to_search.join(' OR ')})"] + Array.new(columns_to_search.length, "%#{params[:q]}%")
         end
-        return conditions
+        
+        conditions
       end
 
       def value_provided?(params, name)
